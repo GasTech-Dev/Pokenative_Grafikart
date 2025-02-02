@@ -2,16 +2,24 @@ import {useInfiniteQuery, useQuery} from "@tanstack/react-query"
 
 const endpoint = "https://pokeapi.co/api/v2"
 
-export function useFetchQuerry(path:string) {
+type API = {
+    '/pokemon?limit=21':{
+        count: number,
+        next: string | null,
+        results:{name:string, url:string}[],
+    }
+}
+
+export function useFetchQuerry<T extends keyof API>(path:string) {
     return useQuery({
         queryKey: [path],
         queryFn: async () => {
             await wait(1)
-            return fetch(endpoint + path).then(r => r.json())
+            return fetch(endpoint + path).then(r => r.json() as Promise<API[T]>)
         }
     })
 }
-export function useInfiniteFetchQuerry(path:string) {
+export function useInfiniteFetchQuerry<T extends keyof API>(path:string){
     return useInfiniteQuery({
         queryKey: [path],
         initialPageParam: endpoint + path,
@@ -21,7 +29,7 @@ export function useInfiniteFetchQuerry(path:string) {
                 headers:{
                     Accept: "application/json",
                 }
-            }).then(r => r.json())
+            }).then(r => r.json() as Promise<API[T]>)
         },
         getNextPageParam:(lastPage) => {
             if ("next" in lastPage) {
